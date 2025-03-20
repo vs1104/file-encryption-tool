@@ -1,0 +1,62 @@
+/* Custom styles */
+body {
+    background-color: #f8f9fa;
+}
+
+body {
+    background-image: url("{{ url_for('static', filename='background.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+}
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+h1, h2 {
+    font-weight: 600;
+}
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.btn {
+    font-weight: bold;
+}
+
+.list-group-item {
+    transition: transform 0.2s;
+}
+
+.list-group-item:hover {
+    transform: scale(1.02);
+    cursor: pointer;
+}
+
+.badge {
+    font-size: 0.9rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.card {
+    animation: fadeIn 1s ease-in-out;
+}
+
+.btn {
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}

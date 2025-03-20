@@ -14,7 +14,8 @@ os.makedirs(FILES_FOLDER, exist_ok=True)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # Pass the 'os' module to the template
+    return render_template("index.html", os=os)
 
 @app.route("/generate_keys", methods=["POST"])
 def generate_keys():
@@ -48,4 +49,4 @@ def download_file(filename):
     return send_from_directory(FILES_FOLDER, filename)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5003)  # Change the port here
