@@ -1,29 +1,26 @@
 /* Custom styles */
 body {
     background-color: #f8f9fa;
-}
-
-body {
     background-image: url("{{ url_for('static', filename='background.jpg') }}");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;
 }
-body {
-    font-family: 'Poppins', sans-serif;
-}
 
-h1, h2 {
-    font-weight: 600;
-}
 .card {
     border: none;
     border-radius: 15px;
+    animation: fadeIn 1s ease-in-out;
 }
 
 .btn {
     font-weight: bold;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
 }
 
 .list-group-item {
@@ -39,6 +36,171 @@ h1, h2 {
     font-size: 0.9rem;
 }
 
+.delete-btn {
+    color: #dc3545;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.delete-btn:hover {
+    color: #a71d2a;
+}
+
+/* Progress spinner */
+.spinner-border {
+    display: none; /* Hidden by default */
+}
+
+/* Light Theme (Default) */
+:root {
+    --background-color: #f8f9fa;
+    --text-color: #333;
+    --heading-color: #000; /* Black for light mode */
+    --password-strength-text: #000; /* Light mode text color */
+    --card-background: #fff;
+    --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --btn-primary-bg: #0d6efd;
+    --btn-primary-hover-bg: #0b5ed7;
+    --btn-success-bg: #198754;
+    --btn-success-hover-bg: #157347;
+    --btn-warning-bg: #ffc107;
+    --btn-warning-hover-bg: #ffca2c;
+    --btn-danger-bg: #dc3545;
+    --btn-danger-hover-bg: #bb2d3b;
+    --list-group-bg: #fff;
+    --list-group-border: rgba(0, 0, 0, 0.125);
+    --list-group-hover-bg: #f8f9fa;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --background-color: #121212;
+    --text-color: #f8f9fa;
+    --heading-color: #fff; /* White for dark mode */
+    --password-strength-text: #fff; /* Dark mode text color */
+    --card-background: #1e1e1e;
+    --card-shadow: 0 0.5rem 1rem rgba(255, 255, 255, 0.15);
+    --btn-primary-bg: #0d6efd;
+    --btn-primary-hover-bg: #0b5ed7;
+    --btn-success-bg: #198754;
+    --btn-success-hover-bg: #157347;
+    --btn-warning-bg: #ffc107;
+    --btn-warning-hover-bg: #ffca2c;
+    --btn-danger-bg: #dc3545;
+    --btn-danger-hover-bg: #bb2d3b;
+    --list-group-bg: #2d2d2d;
+    --list-group-border: rgba(255, 255, 255, 0.125);
+    --list-group-hover-bg: #3d3d3d;
+}
+
+/* Apply CSS Variables */
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+h1, h2 {
+    color: var(--heading-color); /* Apply heading color dynamically */
+}
+
+.card {
+    background-color: var(--card-background);
+    box-shadow: var(--card-shadow);
+}
+
+.btn-primary {
+    background-color: var(--btn-primary-bg);
+    border-color: var(--btn-primary-bg);
+}
+
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover-bg);
+    border-color: var(--btn-primary-hover-bg);
+}
+
+.btn-success {
+    background-color: var(--btn-success-bg);
+    border-color: var(--btn-success-bg);
+}
+
+.btn-success:hover {
+    background-color: var(--btn-success-hover-bg);
+    border-color: var(--btn-success-hover-bg);
+}
+
+.btn-warning {
+    background-color: var(--btn-warning-bg);
+    border-color: var(--btn-warning-bg);
+}
+
+.btn-warning:hover {
+    background-color: var(--btn-warning-hover-bg);
+    border-color: var(--btn-warning-hover-bg);
+}
+
+.btn-danger {
+    background-color: var(--btn-danger-bg);
+    border-color: var(--btn-danger-bg);
+}
+
+.btn-danger:hover {
+    background-color: var(--btn-danger-hover-bg);
+    border-color: var(--btn-danger-hover-bg);
+}
+
+.list-group-item {
+    background-color: var(--list-group-bg);
+    border-color: var(--list-group-border);
+}
+
+.list-group-item:hover {
+    background-color: var(--list-group-hover-bg);
+}
+
+/* Password Strength Meter */
+.password-strength-meter {
+    margin-top: 0.5rem;
+}
+
+.progress {
+    height: 0.5rem;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+.password-strength-meter small {
+    color: var(--password-strength-text); /* Apply dynamic text color */
+    font-size: 0.875rem; /* Adjust font size if needed */
+}
+
+/* Ensure visibility in dark mode */
+[data-theme="dark"] .password-strength-meter small {
+    color: #adb5bd; /* Light gray for dark mode */
+}
+
+/* File Preview Modal Styles */
+.modal-body img {
+    max-width: 100%;
+    height: auto;
+}
+
+.modal-body canvas {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#unsupportedPreview {
+    display: none;
+    font-size: 1.2rem;
+    color: #666;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {
@@ -47,16 +209,4 @@ h1, h2 {
     to {
         opacity: 1;
     }
-}
-
-.card {
-    animation: fadeIn 1s ease-in-out;
-}
-
-.btn {
-    transition: background-color 0.3s, transform 0.3s;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
 }

@@ -10,54 +10,288 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js" integrity="sha512-ml/QKfG3+Yes6TwOzQb7aCNtJF4PUyha6R3w8pSTo/VJSywl7ZreYvvtUso7fKevpsI+pYVVwnu82YO0q3V6eg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- zxcvbn Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
 </head>
 <body class="bg-light">
     <div class="container mt-5">
+        <!-- Dark Mode Toggle Button -->
+        <div class="text-end mb-3">
+            <button id="themeToggle" class="btn btn-secondary">
+                <span id="themeIcon">🌙</span> Dark Mode
+            </button>
+        </div>
+
         <div class="card shadow-lg p-4">
             <h1 class="text-center mb-4">File Encryption Tool</h1>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             <form action="/generate_keys" method="post" class="mb-4">
                 <button type="submit" class="btn btn-primary w-100">Generate Keys</button>
             </form>
             <hr>
-            <form action="/encrypt" method="post" enctype="multipart/form-data" class="mb-4">
+            <form action="/encrypt" method="post" enctype="multipart/form-data" class="mb-4" onsubmit="showSpinner('encrypt-spinner')">
                 <div class="mb-3">
-                    <input type="file" name="file" class="form-control" required>
+                    <input type="file" name="file" id="fileInput" class="form-control" accept=".txt,.pdf,.docx,.png,.jpg" required>
                 </div>
-                <button type="submit" class="btn btn-success w-100">Encrypt File</button>
+                <div class="mb-3">
+                    <input type="password" name="password" id="encryptPassword" class="form-control" placeholder="Enter password (optional)">
+                    <div class="password-strength-meter mt-2">
+                        <div class="progress">
+                            <div id="encryptPasswordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="encryptPasswordStrengthText" class="form-text text-muted">Password strength: <span id="encryptPasswordStrengthLabel">Very Weak</span></small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success w-100">
+                    <span class="spinner-border spinner-border-sm" id="encrypt-spinner"></span>
+                    Encrypt File
+                </button>
             </form>
             <hr>
-            <form action="/decrypt" method="post" enctype="multipart/form-data" class="mb-4">
+            <form action="/decrypt" method="post" enctype="multipart/form-data" class="mb-4" onsubmit="showSpinner('decrypt-spinner')">
                 <div class="mb-3">
-                    <input type="file" name="file" class="form-control" required>
+                    <input type="file" name="file" id="decryptFileInput" class="form-control" accept=".enc" required>
                 </div>
-                <button type="submit" class="btn btn-warning w-100">Decrypt File</button>
+                <div class="mb-3">
+                    <input type="password" name="password" id="decryptPassword" class="form-control" placeholder="Enter password (if applicable)">
+                    <div class="password-strength-meter mt-2">
+                        <div class="progress">
+                            <div id="decryptPasswordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="decryptPasswordStrengthText" class="form-text text-muted">Password strength: <span id="decryptPasswordStrengthLabel">Very Weak</span></small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-warning w-100">
+                    <span class="spinner-border spinner-border-sm" id="decrypt-spinner"></span>
+                    Decrypt File
+                </button>
             </form>
             <hr>
             <h2 class="text-center mb-3">Files</h2>
             <ul class="list-group">
-                {% for file in os.listdir("files") %}
+                {% for file in files %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <a href="/files/{{ file }}" class="text-decoration-none">{{ file }}</a>
-                        <span class="badge bg-primary rounded-pill">Download</span>
+                        <div>
+                            <span class="badge bg-primary rounded-pill">Download</span>
+                            <span class="delete-btn ms-2" onclick="deleteFile('{{ file }}')">🗑️</span>
+                            <button class="btn btn-sm btn-info ms-2" onclick="generateShareableLink('{{ file }}')">Get Shareable Link</button>
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
 
+    <!-- File Preview Modal -->
+    <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filePreviewModalLabel">File Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="imagePreview" class="text-center">
+                        <!-- Image preview will be displayed here -->
+                    </div>
+                    <div id="pdfPreview" class="text-center">
+                        <!-- PDF preview will be displayed here -->
+                    </div>
+                    <div id="unsupportedPreview" class="text-center">
+                        <p>File preview is not supported for this file type.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-<script>
-    // File upload preview
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-        input.addEventListener('change', function (e) {
-            const fileName = e.target.files[0].name;
-            const label = e.target.nextElementSibling || e.target.parentElement.nextElementSibling;
-            if (label) {
-                label.textContent = fileName;
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById("themeToggle");
+        const themeIcon = document.getElementById("themeIcon");
+        const body = document.body;
+
+        // Check user's theme preference from localStorage
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+            body.setAttribute("data-theme", "dark");
+            themeIcon.textContent = "☀️";
+            themeToggle.textContent = " Light Mode";
+        }
+
+        // Toggle theme
+        themeToggle.addEventListener("click", () => {
+            if (body.getAttribute("data-theme") === "dark") {
+                body.removeAttribute("data-theme");
+                themeIcon.textContent = "🌙";
+                themeToggle.textContent = " Dark Mode";
+                localStorage.setItem("theme", "light");
+            } else {
+                body.setAttribute("data-theme", "dark");
+                themeIcon.textContent = "☀️";
+                themeToggle.textContent = " Light Mode";
+                localStorage.setItem("theme", "dark");
             }
         });
-    });
-</script>
+
+        // Show spinner during file operations
+        function showSpinner(spinnerId) {
+            document.getElementById(spinnerId).style.display = "inline-block";
+        }
+
+        // Delete file
+        function deleteFile(filename) {
+            if (confirm("Are you sure you want to delete " + filename + "?")) {
+                fetch(`/delete_file/${filename}`, { method: "DELETE" })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload(); // Reload the page to reflect changes
+                        } else {
+                            alert("Failed to delete file.");
+                        }
+                    });
+            }
+        }
+
+        // Generate shareable link
+        function generateShareableLink(filename) {
+            fetch(`/generate_shareable_link/${filename}`, { method: "POST" })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json(); // Parse the JSON response
+                    } else {
+                        throw new Error("Failed to generate shareable link.");
+                    }
+                })
+                .then(data => {
+                    alert(`Shareable link: ${data.link}`); // Display the link in an alert
+                    location.reload(); // Reload the page to reflect changes
+                })
+                .catch(error => {
+                    alert(error.message); // Display the error message
+                });
+        }
+
+        // Password Strength Checker
+        function checkPasswordStrength(password, strengthBar, strengthLabel) {
+            const result = zxcvbn(password);
+            const strength = result.score; // Score ranges from 0 (very weak) to 4 (very strong)
+            const strengthText = ["Very Weak", "Weak", "Moderate", "Strong", "Very Strong"][strength];
+            const strengthColor = ["bg-danger", "bg-danger", "bg-warning", "bg-info", "bg-success"][strength];
+
+            // Update the progress bar
+            strengthBar.style.width = `${(strength + 1) * 25}%`;
+            strengthBar.className = `progress-bar ${strengthColor}`;
+
+            // Update the strength label
+            strengthLabel.textContent = strengthText;
+        }
+
+        // Attach event listeners to password fields
+        const encryptPassword = document.getElementById("encryptPassword");
+        const encryptPasswordStrength = document.getElementById("encryptPasswordStrength");
+        const encryptPasswordStrengthLabel = document.getElementById("encryptPasswordStrengthLabel");
+
+        const decryptPassword = document.getElementById("decryptPassword");
+        const decryptPasswordStrength = document.getElementById("decryptPasswordStrength");
+        const decryptPasswordStrengthLabel = document.getElementById("decryptPasswordStrengthLabel");
+
+        if (encryptPassword) {
+            encryptPassword.addEventListener("input", () => {
+                checkPasswordStrength(encryptPassword.value, encryptPasswordStrength, encryptPasswordStrengthLabel);
+            });
+        }
+
+        if (decryptPassword) {
+            decryptPassword.addEventListener("input", () => {
+                checkPasswordStrength(decryptPassword.value, decryptPasswordStrength, decryptPasswordStrengthLabel);
+            });
+        }
+
+        // File preview logic
+        const fileInput = document.getElementById("fileInput");
+        const decryptFileInput = document.getElementById("decryptFileInput");
+        const filePreviewModal = new bootstrap.Modal(document.getElementById("filePreviewModal"));
+        const imagePreview = document.getElementById("imagePreview");
+        const pdfPreview = document.getElementById("pdfPreview");
+        const unsupportedPreview = document.getElementById("unsupportedPreview");
+
+        function showFilePreview(file) {
+            // Reset preview sections
+            imagePreview.innerHTML = "";
+            pdfPreview.innerHTML = "";
+            unsupportedPreview.style.display = "none";
+
+            if (file.type.startsWith("image/")) {
+                // Display image preview
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+                filePreviewModal.show();
+            } else if (file.type === "application/pdf") {
+                // Display PDF preview using PDF.js
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const pdfData = e.target.result;
+                    pdfjsLib.getDocument({ data: pdfData }).promise.then(pdf => {
+                        pdf.getPage(1).then(page => {
+                            const scale = 1.5;
+                            const viewport = page.getViewport({ scale });
+                            const canvas = document.createElement("canvas");
+                            const context = canvas.getContext("2d");
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            pdfPreview.appendChild(canvas);
+                            page.render({
+                                canvasContext: context,
+                                viewport: viewport
+                            });
+                        });
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+                filePreviewModal.show();
+            } else {
+                // Show unsupported preview message
+                unsupportedPreview.style.display = "block";
+                filePreviewModal.show();
+            }
+        }
+
+        // Add event listeners for file inputs
+        fileInput.addEventListener("change", function (e) {
+            if (e.target.files.length > 0) {
+                showFilePreview(e.target.files[0]);
+            }
+        });
+
+        decryptFileInput.addEventListener("change", function (e) {
+            if (e.target.files.length > 0) {
+                showFilePreview(e.target.files[0]);
+            }
+        });
+    </script>
+</body>
 </html>
