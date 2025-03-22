@@ -19,6 +19,12 @@
     <div class="container mt-5">
         <!-- Dark Mode Toggle Button -->
         <div class="text-end mb-3">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-success">Register</a>
+            {% endif %}
             <button id="themeToggle" class="btn btn-secondary">
                 <span id="themeIcon">🌙</span> Dark Mode
             </button>
@@ -38,61 +44,65 @@
                 {% endif %}
             {% endwith %}
 
-            <form action="/generate_keys" method="post" class="mb-4">
-                <button type="submit" class="btn btn-primary w-100">Generate Keys</button>
-            </form>
-            <hr>
-            <form action="/encrypt" method="post" enctype="multipart/form-data" class="mb-4" onsubmit="showSpinner('encrypt-spinner')">
-                <div class="mb-3">
-                    <input type="file" name="file" id="fileInput" class="form-control" accept=".txt,.pdf,.docx,.png,.jpg" required>
-                </div>
-                <div class="mb-3">
-                    <input type="password" name="password" id="encryptPassword" class="form-control" placeholder="Enter password (optional)">
-                    <div class="password-strength-meter mt-2">
-                        <div class="progress">
-                            <div id="encryptPasswordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <small id="encryptPasswordStrengthText" class="form-text text-muted">Password strength: <span id="encryptPasswordStrengthLabel">Very Weak</span></small>
+            {% if current_user.is_authenticated %}
+                <form action="/generate_keys" method="post" class="mb-4">
+                    <button type="submit" class="btn btn-primary w-100">Generate Keys</button>
+                </form>
+                <hr>
+                <form id="encrypt-form" method="post" enctype="multipart/form-data" class="mb-4" onsubmit="showSpinner('encrypt-spinner')">
+                    <div class="mb-3">
+                        <input type="file" name="file" id="fileInput" class="form-control" accept=".txt,.pdf,.docx,.png,.jpg" required>
                     </div>
-                </div>
-                <button type="submit" class="btn btn-success w-100">
-                    <span class="spinner-border spinner-border-sm" id="encrypt-spinner"></span>
-                    Encrypt File
-                </button>
-            </form>
-            <hr>
-            <form action="/decrypt" method="post" enctype="multipart/form-data" class="mb-4" onsubmit="showSpinner('decrypt-spinner')">
-                <div class="mb-3">
-                    <input type="file" name="file" id="decryptFileInput" class="form-control" accept=".enc" required>
-                </div>
-                <div class="mb-3">
-                    <input type="password" name="password" id="decryptPassword" class="form-control" placeholder="Enter password (if applicable)">
-                    <div class="password-strength-meter mt-2">
-                        <div class="progress">
-                            <div id="decryptPasswordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    <div class="mb-3">
+                        <input type="password" name="password" id="encryptPassword" class="form-control" placeholder="Enter password (optional)">
+                        <div class="password-strength-meter mt-2">
+                            <div class="progress">
+                                <div id="encryptPasswordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="encryptPasswordStrengthText" class="form-text text-muted">Password strength: <span id="encryptPasswordStrengthLabel">Very Weak</span></small>
                         </div>
-                        <small id="decryptPasswordStrengthText" class="form-text text-muted">Password strength: <span id="decryptPasswordStrengthLabel">Very Weak</span></small>
                     </div>
-                </div>
-                <button type="submit" class="btn btn-warning w-100">
-                    <span class="spinner-border spinner-border-sm" id="decrypt-spinner"></span>
-                    Decrypt File
-                </button>
-            </form>
-            <hr>
-            <h2 class="text-center mb-3">Files</h2>
-            <ul class="list-group">
-                {% for file in files %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="/files/{{ file }}" class="text-decoration-none">{{ file }}</a>
-                        <div>
-                            <span class="badge bg-primary rounded-pill">Download</span>
-                            <span class="delete-btn ms-2" onclick="deleteFile('{{ file }}')">🗑️</span>
-                            <button class="btn btn-sm btn-info ms-2" onclick="generateShareableLink('{{ file }}')">Get Shareable Link</button>
+                    <button type="submit" class="btn btn-success w-100">
+                        <span class="spinner-border spinner-border-sm" id="encrypt-spinner"></span>
+                        Encrypt File
+                    </button>
+                </form>
+                <hr>
+                <form id="decrypt-form" method="post" enctype="multipart/form-data" class="mb-4" onsubmit="showSpinner('decrypt-spinner')">
+                    <div class="mb-3">
+                        <input type="file" name="file" id="decryptFileInput" class="form-control" accept=".enc" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" name="password" id="decryptPassword" class="form-control" placeholder="Enter password (if applicable)">
+                        <div class="password-strength-meter mt-2">
+                            <div class="progress">
+                                <div id="decryptPasswordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="decryptPasswordStrengthText" class="form-text text-muted">Password strength: <span id="decryptPasswordStrengthLabel">Very Weak</span></small>
                         </div>
-                    </li>
-                {% endfor %}
-            </ul>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">
+                        <span class="spinner-border spinner-border-sm" id="decrypt-spinner"></span>
+                        Decrypt File
+                    </button>
+                </form>
+                <hr>
+                <h2 class="text-center mb-3">Files</h2>
+                <ul class="list-group">
+                    {% for file in files %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/files/{{ file }}" class="text-decoration-none">{{ file }}</a>
+                            <div>
+                                <span class="badge bg-primary rounded-pill">Download</span>
+                                <span class="delete-btn ms-2" onclick="deleteFile('{{ file }}')">🗑️</span>
+                                <button class="btn btn-sm btn-info ms-2" onclick="generateShareableLink('{{ file }}')">Get Shareable Link</button>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-center">Please log in to access the file encryption tool.</p>
+            {% endif %}
         </div>
     </div>
 
@@ -292,6 +302,53 @@
                 showFilePreview(e.target.files[0]);
             }
         });
+
+        // Handle encryption/decryption responses
+        function handleEncryptionDecryptionResponse(response) {
+            if (response.status === "success") {
+                // Show desktop notification
+                if (Notification.permission === "granted") {
+                    new Notification(response.notification.title, { body: response.notification.body });
+                }
+                // Reload the page to reflect changes
+                location.reload();
+            } else {
+                alert(response.message);
+            }
+        }
+
+        // Submit encryption form via AJAX
+        document.getElementById("encrypt-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            fetch("/encrypt", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => handleEncryptionDecryptionResponse(data))
+            .catch(error => console.error("Error:", error));
+        });
+
+        // Submit decryption form via AJAX
+        document.getElementById("decrypt-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            fetch("/decrypt", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => handleEncryptionDecryptionResponse(data))
+            .catch(error => console.error("Error:", error));
+        });
+
+        // Request permission for desktop notifications
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
     </script>
 </body>
 </html>
