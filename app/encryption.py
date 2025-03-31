@@ -5,25 +5,37 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 import os
+import logging
 
-# AES-256 Encryption and Decryption
+# Constants
+AES_KEY_SIZE = 32  # 256-bit
+IV_SIZE = 16       # 128-bit
+SALT_SIZE = 16
+RSA_KEY_SIZE = 2048
+PBKDF2_ITERATIONS = 100000
+
 def generate_aes_key(password=None, salt=None):
     """Generate a random 256-bit (32-byte) AES key or derive from password."""
     if password:
         if not salt:
-            salt = os.urandom(16)
+            salt = os.urandom(SALT_SIZE)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
-            length=32,
+            length=AES_KEY_SIZE,
             salt=salt,
-            iterations=100000,
+            iterations=PBKDF2_ITERATIONS,
             backend=default_backend()
         )
         return kdf.derive(password.encode()), salt
-    return os.urandom(32), None
+    return os.urandom(AES_KEY_SIZE), None
 
 def encrypt_aes(data, key, iv):
-    """Encrypt data using AES-256."""
+    """Encrypt data using AES-256-CBC."""
+    if len(key) != AES_KEY_SIZE:
+        raise ValueError(f"AES key must be {AES_KEY_SIZE} bytes")
+    if len(iv) != IV_SIZE:
+        raise ValueError(f"IV must be {IV_SIZE} bytes")
+    
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     encryptor = cipher.encryptor()
     padder = padding.PKCS7(algorithms.AES.block_size).padder()
@@ -31,46 +43,65 @@ def encrypt_aes(data, key, iv):
     return encryptor.update(padded_data) + encryptor.finalize()
 
 def decrypt_aes(encrypted_data, key, iv):
-    """Decrypt data using AES-256."""
+    """Decrypt data using AES-256-CBC."""
+    if len(key) != AES_KEY_SIZE:
+        raise ValueError(f"AES key must be {AES_KEY_SIZE} bytes")
+    if len(iv) != IV_SIZE:
+        raise ValueError(f"IV must be {IV_SIZE} bytes")
+    
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     decryptor = cipher.decryptor()
     padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
     unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
     return unpadder.update(padded_data) + unpadder.finalize()
 
-# RSA Encryption and Decryption
 def generate_rsa_keys(private_key_path, public_key_path):
     """Generate RSA keys and save them as PEM files."""
-    key = RSA.generate(2048)
+    if os.path.exists(private_key_path) or os.path.exists(public_key_path):
+        raise FileExistsError("Key files already exist")
+    
+    key = RSA.generate(RSA_KEY_SIZE)
     with open(private_key_path, "wb") as priv_file:
         priv_file.write(key.export_key(format="PEM"))
     with open(public_key_path, "wb") as pub_file:
         pub_file.write(key.publickey().export_key(format="PEM"))
 
 def encrypt_rsa(data, public_key):
-    """Encrypt data using RSA."""
+    """Encrypt data using RSA-OAEP."""
+    if len(data) > 190:  # RSA 2048 can encrypt up to 190 bytes
+        raise ValueError("Data too large for RSA encryption")
+    
     rsa_key = RSA.import_key(public_key)
     cipher = PKCS1_OAEP.new(rsa_key)
     return cipher.encrypt(data)
 
 def decrypt_rsa(encrypted_data, private_key):
-    """Decrypt data using RSA."""
+    """Decrypt data using RSA-OAEP."""
     rsa_key = RSA.import_key(private_key)
     cipher = PKCS1_OAEP.new(rsa_key)
     return cipher.decrypt(encrypted_data)
 
-# File Encryption and Decryption
 def encrypt_file(file_path, public_key_path, output_path, password=None):
-    """Encrypt a file using hybrid encryption."""
+    """Encrypt a file using hybrid encryption (RSA+AES)."""
+    # Validate inputs
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Source file not found: {file_path}")
+    if not os.path.exists(public_key_path):
+        raise FileNotFoundError(f"Public key not found: {public_key_path}")
+    if os.path.exists(output_path):
+        raise FileExistsError(f"Output file already exists: {output_path}")
+    
+    # Read public key
     with open(public_key_path, "rb") as key_file:
         public_key = key_file.read()
     
+    # Read file data
     with open(file_path, "rb") as file:
         data = file.read()
     
-    # Generate AES key
+    # Generate AES key and IV
     aes_key, salt = generate_aes_key(password)
-    iv = os.urandom(16)
+    iv = os.urandom(IV_SIZE)
     
     # Encrypt data with AES
     encrypted_data = encrypt_aes(data, aes_key, iv)
@@ -78,39 +109,55 @@ def encrypt_file(file_path, public_key_path, output_path, password=None):
     # Encrypt AES key with RSA
     encrypted_aes_key = encrypt_rsa(aes_key, public_key)
     
-    # Save salt (if used) + encrypted AES key + IV + encrypted data
+    # Write encrypted file
     with open(output_path, "wb") as file:
-        if salt:
+        if password:  # Only write salt if password was used
             file.write(salt)
-        file.write(encrypted_aes_key + iv + encrypted_data)
+        file.write(encrypted_aes_key)
+        file.write(iv)
+        file.write(encrypted_data)
 
 def decrypt_file(file_path, private_key_path, output_path, password=None):
-    """Decrypt a file using hybrid encryption."""
+    """Decrypt a file using hybrid encryption (RSA+AES)."""
+    # Validate inputs
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Encrypted file not found: {file_path}")
+    if not os.path.exists(private_key_path):
+        raise FileNotFoundError(f"Private key not found: {private_key_path}")
+    if os.path.exists(output_path):
+        raise FileExistsError(f"Output file already exists: {output_path}")
+    
+    # Read private key
     with open(private_key_path, "rb") as key_file:
         private_key = key_file.read()
     
+    # Read encrypted file
     with open(file_path, "rb") as file:
         encrypted_data = file.read()
     
-    # Extract salt (if used), encrypted AES key, IV, and encrypted data
+    # Extract components
+    offset = 0
     salt = None
     if password:
-        salt = encrypted_data[:16]
-        encrypted_data = encrypted_data[16:]
-    encrypted_aes_key = encrypted_data[:256]
-    iv = encrypted_data[256:272]
-    encrypted_data = encrypted_data[272:]
+        salt = encrypted_data[:SALT_SIZE]
+        offset = SALT_SIZE
     
-    # Decrypt AES key with RSA
+    encrypted_aes_key = encrypted_data[offset:offset+256]  # RSA 2048 produces 256-byte ciphertext
+    offset += 256
+    iv = encrypted_data[offset:offset+IV_SIZE]
+    offset += IV_SIZE
+    encrypted_data = encrypted_data[offset:]
+    
+    # Decrypt AES key
     aes_key = decrypt_rsa(encrypted_aes_key, private_key)
     
-    # Derive AES key if password is provided
+    # If password was used, derive key from password
     if password:
         aes_key, _ = generate_aes_key(password, salt)
     
-    # Decrypt data with AES
+    # Decrypt data
     decrypted_data = decrypt_aes(encrypted_data, aes_key, iv)
     
-    # Save decrypted data
+    # Write decrypted file
     with open(output_path, "wb") as file:
         file.write(decrypted_data)

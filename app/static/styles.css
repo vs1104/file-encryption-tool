@@ -1,22 +1,27 @@
 /* Custom styles */
 body {
-    background-color: #f8f9fa;
+    background-color: var(--background-color);
     background-image: url("{{ url_for('static', filename='background.jpg') }}");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
 }
 
 .card {
     border: none;
     border-radius: 15px;
     animation: fadeIn 1s ease-in-out;
+    background-color: var(--card-background);
+    box-shadow: var(--card-shadow);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .btn {
     font-weight: bold;
-    transition: background-color 0.3s, transform 0.3s;
+    transition: background-color 0.3s, transform 0.3s, border-color 0.3s;
 }
 
 .btn:hover {
@@ -24,12 +29,16 @@ body {
 }
 
 .list-group-item {
-    transition: transform 0.2s;
+    transition: transform 0.2s, background-color 0.3s;
+    background-color: var(--list-group-bg);
+    border-color: var(--list-group-border);
+    color: var(--text-color);
 }
 
 .list-group-item:hover {
     transform: scale(1.02);
     cursor: pointer;
+    background-color: var(--list-group-hover-bg);
 }
 
 .badge {
@@ -37,13 +46,13 @@ body {
 }
 
 .delete-btn {
-    color: #dc3545;
+    color: var(--btn-danger-bg);
     cursor: pointer;
     transition: color 0.3s;
 }
 
 .delete-btn:hover {
-    color: #a71d2a;
+    color: var(--btn-danger-hover-bg);
 }
 
 /* Progress spinner */
@@ -51,12 +60,12 @@ body {
     display: none; /* Hidden by default */
 }
 
-/* Light Theme (Default) */
+/* Theme Variables */
 :root {
+    /* Light Theme (Default) */
     --background-color: #f8f9fa;
     --text-color: #333;
-    --heading-color: #000; /* Black for light mode */
-    --password-strength-text: #000; /* Light mode text color */
+    --heading-color: #000;
     --card-background: #fff;
     --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     --btn-primary-bg: #0d6efd;
@@ -70,16 +79,28 @@ body {
     --list-group-bg: #fff;
     --list-group-border: rgba(0, 0, 0, 0.125);
     --list-group-hover-bg: #f8f9fa;
+    --modal-background: #fff;
+    --modal-border: #dee2e6;
+    --input-background: #fff;
+    --input-border: #ced4da;
+    --input-color: #495057;
+    --input-placeholder: #6c757d;
+    --table-color: #212529;
+    --table-bg: transparent;
+    --table-hover-bg: rgba(0, 0, 0, 0.075);
+    --alert-bg: #f8f9fa;
+    --alert-border: #f8f9fa;
+    --alert-color: #212529;
+    --welcome-color: #212529;
 }
 
-/* Dark Theme */
 [data-theme="dark"] {
+    /* Dark Theme */
     --background-color: #121212;
     --text-color: #f8f9fa;
-    --heading-color: #fff; /* White for dark mode */
-    --password-strength-text: #fff; /* Dark mode text color */
+    --heading-color: #fff;
     --card-background: #1e1e1e;
-    --card-shadow: 0 0.5rem 1rem rgba(255, 255, 255, 0.15);
+    --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
     --btn-primary-bg: #0d6efd;
     --btn-primary-hover-bg: #0b5ed7;
     --btn-success-bg: #198754;
@@ -91,70 +112,87 @@ body {
     --list-group-bg: #2d2d2d;
     --list-group-border: rgba(255, 255, 255, 0.125);
     --list-group-hover-bg: #3d3d3d;
+    --modal-background: #1e1e1e;
+    --modal-border: #444;
+    --input-background: #2d2d2d;
+    --input-border: #444;
+    --input-color: #f8f9fa;
+    --input-placeholder: #adb5bd;
+    --table-color: #f8f9fa;
+    --table-bg: transparent;
+    --table-hover-bg: rgba(255, 255, 255, 0.075);
+    --alert-bg: #2d2d2d;
+    --alert-border: #2d2d2d;
+    --alert-color: #f8f9fa;
+    --welcome-color: #f8f9fa;
 }
 
-/* Apply CSS Variables */
-body {
-    background-color: var(--background-color);
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--heading-color);
+}
+
+/* Forms */
+.form-control, .form-select {
+    background-color: var(--input-background);
+    border-color: var(--input-border);
+    color: var(--input-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--input-background);
+    color: var(--input-color);
+}
+
+.form-label {
     color: var(--text-color);
 }
 
-h1, h2 {
-    color: var(--heading-color); /* Apply heading color dynamically */
+/* Placeholder text */
+::placeholder {
+    color: var(--input-placeholder);
+    opacity: 1;
 }
 
-.card {
-    background-color: var(--card-background);
-    box-shadow: var(--card-shadow);
+:-ms-input-placeholder {
+    color: var(--input-placeholder);
 }
 
-.btn-primary {
-    background-color: var(--btn-primary-bg);
-    border-color: var(--btn-primary-bg);
+::-ms-input-placeholder {
+    color: var(--input-placeholder);
 }
 
-.btn-primary:hover {
-    background-color: var(--btn-primary-hover-bg);
-    border-color: var(--btn-primary-hover-bg);
+/* Welcome message */
+.welcome-message {
+    color: var(--welcome-color);
 }
 
-.btn-success {
-    background-color: var(--btn-success-bg);
-    border-color: var(--btn-success-bg);
+/* Tables */
+.table {
+    color: var(--table-color);
+    background-color: var(--table-bg);
 }
 
-.btn-success:hover {
-    background-color: var(--btn-success-hover-bg);
-    border-color: var(--btn-success-hover-bg);
+.table-hover tbody tr:hover {
+    background-color: var(--table-hover-bg);
 }
 
-.btn-warning {
-    background-color: var(--btn-warning-bg);
-    border-color: var(--btn-warning-bg);
+/* Alerts */
+.alert {
+    background-color: var(--alert-bg);
+    border-color: var(--alert-border);
+    color: var(--alert-color);
 }
 
-.btn-warning:hover {
-    background-color: var(--btn-warning-hover-bg);
-    border-color: var(--btn-warning-hover-bg);
+/* Modals */
+.modal-content {
+    background-color: var(--modal-background);
+    border-color: var(--modal-border);
 }
 
-.btn-danger {
-    background-color: var(--btn-danger-bg);
-    border-color: var(--btn-danger-bg);
-}
-
-.btn-danger:hover {
-    background-color: var(--btn-danger-hover-bg);
-    border-color: var(--btn-danger-hover-bg);
-}
-
-.list-group-item {
-    background-color: var(--list-group-bg);
-    border-color: var(--list-group-border);
-}
-
-.list-group-item:hover {
-    background-color: var(--list-group-hover-bg);
+.modal-header, .modal-footer {
+    border-color: var(--modal-border);
 }
 
 /* Password Strength Meter */
@@ -164,7 +202,7 @@ h1, h2 {
 
 .progress {
     height: 0.5rem;
-    background-color: #e9ecef;
+    background-color: var(--list-group-border);
     border-radius: 0.25rem;
 }
 
@@ -173,40 +211,59 @@ h1, h2 {
 }
 
 .password-strength-meter small {
-    color: var(--password-strength-text); /* Apply dynamic text color */
-    font-size: 0.875rem; /* Adjust font size if needed */
-}
-
-/* Ensure visibility in dark mode */
-[data-theme="dark"] .password-strength-meter small {
-    color: #adb5bd; /* Light gray for dark mode */
+    color: var(--text-color);
+    font-size: 0.875rem;
 }
 
 /* File Preview Modal Styles */
-.modal-body img {
+.modal-body img, .modal-body canvas {
     max-width: 100%;
     height: auto;
-}
-
-.modal-body canvas {
-    max-width: 100%;
-    height: auto;
-    border: 1px solid #ddd;
+    border: 1px solid var(--list-group-border);
     border-radius: 5px;
 }
 
 #unsupportedPreview {
     display: none;
     font-size: 1.2rem;
-    color: #666;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+/* Dark mode specific adjustments */
+[data-theme="dark"] .btn-close {
+    filter: invert(1);
+}
+
+[data-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+[data-theme="dark"] .bg-light {
+    background-color: #2d2d2d !important;
+}
+
+/* Fix for form text visibility */
+[data-theme="dark"] .form-text {
+    color: #adb5bd !important;
 }
 
 /* Animations */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Utility classes for text visibility */
+.text-dark-mode {
+    color: #f8f9fa;
+}
+
+.text-light-mode {
+    color: #212529;
+}
+
+/* Background image handling */
+[data-theme="dark"] body {
+    background-image: url("{{ url_for('static', filename='background-dark.jpg') }}");
 }
