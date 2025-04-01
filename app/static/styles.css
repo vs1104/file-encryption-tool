@@ -1,88 +1,29 @@
-/* Custom styles */
-body {
-    background-color: var(--background-color);
-    background-image: url("{{ url_for('static', filename='background.jpg') }}");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-    color: var(--text-color);
-    transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
-}
-
-.card {
-    border: none;
-    border-radius: 15px;
-    animation: fadeIn 1s ease-in-out;
-    background-color: var(--card-background);
-    box-shadow: var(--card-shadow);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.btn {
-    font-weight: bold;
-    transition: background-color 0.3s, transform 0.3s, border-color 0.3s;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-}
-
-.list-group-item {
-    transition: transform 0.2s, background-color 0.3s;
-    background-color: var(--list-group-bg);
-    border-color: var(--list-group-border);
-    color: var(--text-color);
-}
-
-.list-group-item:hover {
-    transform: scale(1.02);
-    cursor: pointer;
-    background-color: var(--list-group-hover-bg);
-}
-
-.badge {
-    font-size: 0.9rem;
-}
-
-.delete-btn {
-    color: var(--btn-danger-bg);
-    cursor: pointer;
-    transition: color 0.3s;
-}
-
-.delete-btn:hover {
-    color: var(--btn-danger-hover-bg);
-}
-
-/* Progress spinner */
-.spinner-border {
-    display: none; /* Hidden by default */
-}
-
-/* Theme Variables */
+/* SecureCrypt - Enhanced Theme Variables & Styles */
 :root {
     /* Light Theme (Default) */
-    --background-color: #f8f9fa;
+    --background-color: #f8f9fc;
     --text-color: #333;
     --heading-color: #000;
     --card-background: #fff;
     --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    --btn-primary-bg: #0d6efd;
-    --btn-primary-hover-bg: #0b5ed7;
-    --btn-success-bg: #198754;
-    --btn-success-hover-bg: #157347;
-    --btn-warning-bg: #ffc107;
-    --btn-warning-hover-bg: #ffca2c;
-    --btn-danger-bg: #dc3545;
-    --btn-danger-hover-bg: #bb2d3b;
+    --btn-primary-bg: #4e73df;
+    --btn-primary-hover-bg: #3a5ec0;
+    --btn-success-bg: #1cc88a;
+    --btn-success-hover-bg: #17a673;
+    --btn-warning-bg: #f6c23e;
+    --btn-warning-hover-bg: #e4b135;
+    --btn-danger-bg: #e74a3b;
+    --btn-danger-hover-bg: #d23a2b;
+    --btn-info-bg: #36b9cc;
+    --btn-info-hover-bg: #2aa7b9;
     --list-group-bg: #fff;
     --list-group-border: rgba(0, 0, 0, 0.125);
-    --list-group-hover-bg: #f8f9fa;
+    --list-group-hover-bg: rgba(78, 115, 223, 0.05);
     --modal-background: #fff;
     --modal-border: #dee2e6;
     --input-background: #fff;
     --input-border: #ced4da;
+    --input-focus-border: #a1cbef;
     --input-color: #495057;
     --input-placeholder: #6c757d;
     --table-color: #212529;
@@ -91,7 +32,13 @@ body {
     --alert-bg: #f8f9fa;
     --alert-border: #f8f9fa;
     --alert-color: #212529;
+    --alert-primary-bg: rgba(78, 115, 223, 0.1);
+    --alert-primary-color: #4e73df;
+    --alert-info-bg: rgba(54, 185, 204, 0.1);
+    --alert-info-color: #36b9cc;
     --welcome-color: #212529;
+    --icon-color: #4e73df;
+    --progress-bg: #e9ecef;
 }
 
 [data-theme="dark"] {
@@ -101,35 +48,115 @@ body {
     --heading-color: #fff;
     --card-background: #1e1e1e;
     --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
-    --btn-primary-bg: #0d6efd;
-    --btn-primary-hover-bg: #0b5ed7;
-    --btn-success-bg: #198754;
-    --btn-success-hover-bg: #157347;
-    --btn-warning-bg: #ffc107;
-    --btn-warning-hover-bg: #ffca2c;
-    --btn-danger-bg: #dc3545;
-    --btn-danger-hover-bg: #bb2d3b;
-    --list-group-bg: #2d2d2d;
-    --list-group-border: rgba(255, 255, 255, 0.125);
-    --list-group-hover-bg: #3d3d3d;
-    --modal-background: #1e1e1e;
-    --modal-border: #444;
-    --input-background: #2d2d2d;
-    --input-border: #444;
+    --btn-primary-bg: #4e73df;
+    --btn-primary-hover-bg: #3a5ec0;
+    --btn-success-bg: #1cc88a;
+    --btn-success-hover-bg: #17a673;
+    --btn-warning-bg: #f6c23e;
+    --btn-warning-hover-bg: #e4b135;
+    --btn-danger-bg: #e74a3b;
+    --btn-danger-hover-bg: #d23a2b;
+    --btn-info-bg: #36b9cc;
+    --btn-info-hover-bg: #2aa7b9;
+    --list-group-bg: #2d3748;
+    --list-group-border: #4a5568;
+    --list-group-hover-bg: rgba(78, 115, 223, 0.2);
+    --modal-background: #2d3748;
+    --modal-border: #4a5568;
+    --input-background: #4a5568;
+    --input-border: #4a5568;
+    --input-focus-border: #5f6b8c;
     --input-color: #f8f9fa;
     --input-placeholder: #adb5bd;
     --table-color: #f8f9fa;
     --table-bg: transparent;
     --table-hover-bg: rgba(255, 255, 255, 0.075);
-    --alert-bg: #2d2d2d;
-    --alert-border: #2d2d2d;
+    --alert-bg: #2d3748;
+    --alert-border: #4a5568;
     --alert-color: #f8f9fa;
+    --alert-primary-bg: rgba(78, 115, 223, 0.2);
+    --alert-primary-color: #a4b8f1;
+    --alert-info-bg: rgba(54, 185, 204, 0.2);
+    --alert-info-color: #7ad3e0;
     --welcome-color: #f8f9fa;
+    --icon-color: #a4b8f1;
+    --progress-bg: #4a5568;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--background-color);
+    background-image: url("{{ url_for('static', filename='background.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     color: var(--heading-color);
+    font-weight: 600;
+}
+
+.display-4 {
+    letter-spacing: -0.5px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    background-color: var(--card-background);
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15);
+}
+
+/* Buttons */
+.btn {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--btn-primary-bg);
+}
+
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover-bg);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background-color: var(--btn-success-bg);
+}
+
+.btn-success:hover {
+    background-color: var(--btn-success-hover-bg);
+    transform: translateY(-2px);
+}
+
+.btn-outline-secondary {
+    border-color: var(--input-border);
+    color: var(--text-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--list-group-hover-bg);
 }
 
 /* Forms */
@@ -137,16 +164,162 @@ h1, h2, h3, h4, h5, h6 {
     background-color: var(--input-background);
     border-color: var(--input-border);
     color: var(--input-color);
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
 }
 
 .form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    border-color: var(--input-focus-border);
     background-color: var(--input-background);
     color: var(--input-color);
 }
 
+.input-group-text {
+    background-color: var(--input-background);
+    border-color: var(--input-border);
+    color: var(--icon-color);
+}
+
 .form-label {
+    font-weight: 500;
     color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+/* List Groups */
+.list-group-item {
+    background-color: var(--list-group-bg);
+    border-color: var(--list-group-border);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    padding: 1rem 1.25rem;
+}
+
+.list-group-item:hover {
+    transform: translateX(5px);
+    background-color: var(--list-group-hover-bg);
+    cursor: pointer;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+    padding: 1rem 1.25rem;
+}
+
+.alert-primary {
+    background-color: var(--alert-primary-bg);
+    color: var(--alert-primary-color);
+}
+
+.alert-info {
+    background-color: var(--alert-info-bg);
+    color: var(--alert-info-color);
+}
+
+/* Password Strength Meter */
+.password-strength-meter {
+    margin-top: 0.5rem;
+}
+
+.progress {
+    height: 0.375rem;
+    background-color: var(--progress-bg);
+    border-radius: 0.25rem;
+}
+
+.progress-bar {
+    transition: width 0.5s ease;
+}
+
+/* Icons */
+.bi {
+    color: var(--icon-color);
+    transition: color 0.3s ease;
+}
+
+/* Utility Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark Mode Specific */
+[data-theme="dark"] {
+    background-image: url("{{ url_for('static', filename='background-dark.jpg') }}");
+}
+
+[data-theme="dark"] .btn-close {
+    filter: invert(1);
+}
+
+[data-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+[data-theme="dark"] .bg-light {
+    background-color: #2d2d2d !important;
+}
+
+[data-theme="dark"] .form-text {
+    color: #adb5bd !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .display-4 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Spinner */
+.spinner-border {
+    display: none;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+}
+
+/* File Preview */
+.modal-body img, .modal-body canvas {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--list-group-border);
+    border-radius: 0.5rem;
+}
+
+#unsupportedPreview {
+    display: none;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+/* Tables */
+.table {
+    color: var(--table-color);
+    background-color: var(--table-bg);
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--table-hover-bg);
+}
+
+/* Welcome Message */
+.welcome-message {
+    color: var(--welcome-color);
+    font-size: 1.25rem;
 }
 
 /* Placeholder text */
@@ -161,109 +334,4 @@ h1, h2, h3, h4, h5, h6 {
 
 ::-ms-input-placeholder {
     color: var(--input-placeholder);
-}
-
-/* Welcome message */
-.welcome-message {
-    color: var(--welcome-color);
-}
-
-/* Tables */
-.table {
-    color: var(--table-color);
-    background-color: var(--table-bg);
-}
-
-.table-hover tbody tr:hover {
-    background-color: var(--table-hover-bg);
-}
-
-/* Alerts */
-.alert {
-    background-color: var(--alert-bg);
-    border-color: var(--alert-border);
-    color: var(--alert-color);
-}
-
-/* Modals */
-.modal-content {
-    background-color: var(--modal-background);
-    border-color: var(--modal-border);
-}
-
-.modal-header, .modal-footer {
-    border-color: var(--modal-border);
-}
-
-/* Password Strength Meter */
-.password-strength-meter {
-    margin-top: 0.5rem;
-}
-
-.progress {
-    height: 0.5rem;
-    background-color: var(--list-group-border);
-    border-radius: 0.25rem;
-}
-
-.progress-bar {
-    transition: width 0.3s ease;
-}
-
-.password-strength-meter small {
-    color: var(--text-color);
-    font-size: 0.875rem;
-}
-
-/* File Preview Modal Styles */
-.modal-body img, .modal-body canvas {
-    max-width: 100%;
-    height: auto;
-    border: 1px solid var(--list-group-border);
-    border-radius: 5px;
-}
-
-#unsupportedPreview {
-    display: none;
-    font-size: 1.2rem;
-    color: var(--text-color);
-    opacity: 0.7;
-}
-
-/* Dark mode specific adjustments */
-[data-theme="dark"] .btn-close {
-    filter: invert(1);
-}
-
-[data-theme="dark"] .text-muted {
-    color: #adb5bd !important;
-}
-
-[data-theme="dark"] .bg-light {
-    background-color: #2d2d2d !important;
-}
-
-/* Fix for form text visibility */
-[data-theme="dark"] .form-text {
-    color: #adb5bd !important;
-}
-
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Utility classes for text visibility */
-.text-dark-mode {
-    color: #f8f9fa;
-}
-
-.text-light-mode {
-    color: #212529;
-}
-
-/* Background image handling */
-[data-theme="dark"] body {
-    background-image: url("{{ url_for('static', filename='background-dark.jpg') }}");
 }
