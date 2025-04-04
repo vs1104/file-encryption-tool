@@ -56,13 +56,14 @@
                 <!-- Encryption Section -->
                 <div class="card mb-4">
                     <div class="card-header bg-success text-white">
-                        <i class="fas fa-lock"></i> Encrypt File
+                        <i class="fas fa-lock"></i> Encrypt Files
                     </div>
                     <div class="card-body">
                         <form id="encrypt-form" method="post" enctype="multipart/form-data">
                             <div class="mb-3">
-                                <label for="fileInput" class="form-label">Select file to encrypt:</label>
-                                <input type="file" name="file" id="fileInput" class="form-control" required>
+                                <label for="fileInput" class="form-label">Select files to encrypt (multiple allowed):</label>
+                                <input type="file" name="file" id="fileInput" class="form-control" multiple required>
+                                <div id="fileListEncrypt" class="mt-2"></div>
                             </div>
                             <div class="mb-3">
                                 <label for="encryptPassword" class="form-label">Encryption Password:</label>
@@ -79,7 +80,7 @@
                             </div>
                             <button type="submit" class="btn btn-success w-100" id="encrypt-btn">
                                 <span class="spinner-border spinner-border-sm d-none" id="encrypt-spinner"></span>
-                                <i class="fas fa-lock"></i> Encrypt File
+                                <i class="fas fa-lock"></i> Encrypt Files
                             </button>
                         </form>
                     </div>
@@ -88,14 +89,15 @@
                 <!-- Decryption Section -->
                 <div class="card mb-4">
                     <div class="card-header bg-warning text-dark">
-                        <i class="fas fa-unlock"></i> Decrypt File
+                        <i class="fas fa-unlock"></i> Decrypt Files
                     </div>
                     <div class="card-body">
                         <form id="decrypt-form" method="post" enctype="multipart/form-data">
                             <div class="mb-3">
-                                <label for="decryptFileInput" class="form-label">Select encrypted file (.enc):</label>
+                                <label for="decryptFileInput" class="form-label">Select encrypted files (.enc, multiple allowed):</label>
                                 <input type="file" name="file" id="decryptFileInput" class="form-control" 
-                                       accept=".enc" required>
+                                       accept=".enc" multiple required>
+                                <div id="fileListDecrypt" class="mt-2"></div>
                             </div>
                             <div class="mb-3">
                                 <label for="decryptPassword" class="form-label">Decryption Password:</label>
@@ -104,7 +106,7 @@
                             </div>
                             <button type="submit" class="btn btn-warning w-100" id="decrypt-btn">
                                 <span class="spinner-border spinner-border-sm d-none" id="decrypt-spinner"></span>
-                                <i class="fas fa-unlock"></i> Decrypt File
+                                <i class="fas fa-unlock"></i> Decrypt Files
                             </button>
                         </form>
                     </div>
@@ -207,6 +209,24 @@
         </div>
     </div>
 
+    <!-- Results Modal -->
+    <div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultsModalTitle">Processing Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="resultsContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- zxcvbn Library for password strength -->
@@ -296,6 +316,33 @@
             checkPasswordStrength(encryptPassword.value, encryptStrengthBar, encryptStrengthLabel);
         });
 
+        // File selection handlers
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const fileList = document.getElementById('fileListEncrypt');
+            fileList.innerHTML = '';
+            
+            if (this.files.length > 0) {
+                const fileCount = this.files.length;
+                const fileListElement = document.createElement('div');
+                fileListElement.className = 'alert alert-info';
+                fileListElement.innerHTML = `<i class="fas fa-file"></i> ${fileCount} file(s) selected`;
+                fileList.appendChild(fileListElement);
+            }
+        });
+
+        document.getElementById('decryptFileInput').addEventListener('change', function(e) {
+            const fileList = document.getElementById('fileListDecrypt');
+            fileList.innerHTML = '';
+            
+            if (this.files.length > 0) {
+                const fileCount = this.files.length;
+                const fileListElement = document.createElement('div');
+                fileListElement.className = 'alert alert-info';
+                fileListElement.innerHTML = `<i class="fas fa-file"></i> ${fileCount} file(s) selected`;
+                fileList.appendChild(fileListElement);
+            }
+        });
+
         // Form Submission Handling
         function showSpinner(buttonId, spinnerId) {
             document.getElementById(buttonId).disabled = true;
@@ -305,6 +352,14 @@
         function hideSpinner(buttonId, spinnerId) {
             document.getElementById(buttonId).disabled = false;
             document.getElementById(spinnerId).classList.add('d-none');
+        }
+
+        // Show results modal
+        function showResultsModal(title, content) {
+            document.getElementById('resultsModalTitle').textContent = title;
+            document.getElementById('resultsContent').innerHTML = content;
+            const modal = new bootstrap.Modal(document.getElementById('resultsModal'));
+            modal.show();
         }
 
         // Handle encryption form submission
@@ -321,13 +376,49 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    alert(`File encrypted successfully! Original: ${result.original_name}`);
+                    let resultsContent = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Successfully processed ${result.message}
+                        </div>
+                        <h5>Detailed Results:</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>File</th>
+                                        <th>Status</th>
+                                        <th>Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                    
+                    result.results.forEach(fileResult => {
+                        const statusClass = fileResult.status === 'success' ? 'success' : 'danger';
+                        resultsContent += `
+                            <tr class="table-${statusClass}">
+                                <td>${fileResult.file}</td>
+                                <td><span class="badge bg-${statusClass}">${fileResult.status}</span></td>
+                                <td>${fileResult.message}</td>
+                            </tr>`;
+                    });
+                    
+                    resultsContent += `</tbody></table></div>`;
+                    
+                    showResultsModal('Encryption Results', resultsContent);
                     window.location.reload();
                 } else {
-                    alert(`Error: ${result.message}`);
+                    showResultsModal('Encryption Error', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> ${result.message}
+                        </div>
+                    `);
                 }
             } catch (error) {
-                alert('An error occurred during encryption');
+                showResultsModal('Encryption Error', `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> An error occurred during encryption: ${error.message}
+                    </div>
+                `);
                 console.error(error);
             } finally {
                 hideSpinner('encrypt-btn', 'encrypt-spinner');
@@ -348,13 +439,49 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    alert(`File decrypted successfully! Filename: ${result.filename}`);
+                    let resultsContent = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Successfully processed ${result.message}
+                        </div>
+                        <h5>Detailed Results:</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>File</th>
+                                        <th>Status</th>
+                                        <th>Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                    
+                    result.results.forEach(fileResult => {
+                        const statusClass = fileResult.status === 'success' ? 'success' : 'danger';
+                        resultsContent += `
+                            <tr class="table-${statusClass}">
+                                <td>${fileResult.file}</td>
+                                <td><span class="badge bg-${statusClass}">${fileResult.status}</span></td>
+                                <td>${fileResult.message}</td>
+                            </tr>`;
+                    });
+                    
+                    resultsContent += `</tbody></table></div>`;
+                    
+                    showResultsModal('Decryption Results', resultsContent);
                     window.location.reload();
                 } else {
-                    alert(`Error: ${result.message}`);
+                    showResultsModal('Decryption Error', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> ${result.message}
+                        </div>
+                    `);
                 }
             } catch (error) {
-                alert('An error occurred during decryption');
+                showResultsModal('Decryption Error', `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> An error occurred during decryption: ${error.message}
+                    </div>
+                `);
                 console.error(error);
             } finally {
                 hideSpinner('decrypt-btn', 'decrypt-spinner');

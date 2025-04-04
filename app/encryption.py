@@ -161,3 +161,118 @@ def decrypt_file(file_path, private_key_path, output_path, password=None):
     # Write decrypted file
     with open(output_path, "wb") as file:
         file.write(decrypted_data)
+
+def batch_encrypt_files(input_paths, public_key_path, output_folder, password=None):
+    """Encrypt multiple files at once."""
+    results = []
+    
+    # Read public key once for all files
+    if not os.path.exists(public_key_path):
+        raise FileNotFoundError(f"Public key not found: {public_key_path}")
+    
+    with open(public_key_path, "rb") as key_file:
+        public_key = key_file.read()
+    
+    # Process each file
+    for input_path in input_paths:
+        try:
+            if not os.path.exists(input_path):
+                results.append({
+                    'status': 'error',
+                    'file': os.path.basename(input_path),
+                    'message': 'File not found'
+                })
+                continue
+            
+            filename = os.path.basename(input_path)
+            output_path = os.path.join(output_folder, f"{filename}.enc")
+            
+            if os.path.exists(output_path):
+                results.append({
+                    'status': 'error',
+                    'file': filename,
+                    'message': 'Output file already exists'
+                })
+                continue
+            
+            # Encrypt the file
+            encrypt_file(input_path, public_key_path, output_path, password)
+            
+            results.append({
+                'status': 'success',
+                'file': filename,
+                'encrypted_file': f"{filename}.enc",
+                'message': 'File encrypted successfully'
+            })
+            
+        except Exception as e:
+            results.append({
+                'status': 'error',
+                'file': os.path.basename(input_path),
+                'message': str(e)
+            })
+            logging.error(f"Error encrypting file {input_path}: {e}")
+    
+    return results
+
+def batch_decrypt_files(input_paths, private_key_path, output_folder, password=None):
+    """Decrypt multiple files at once."""
+    results = []
+    
+    # Read private key once for all files
+    if not os.path.exists(private_key_path):
+        raise FileNotFoundError(f"Private key not found: {private_key_path}")
+    
+    with open(private_key_path, "rb") as key_file:
+        private_key = key_file.read()
+    
+    # Process each file
+    for input_path in input_paths:
+        try:
+            if not os.path.exists(input_path):
+                results.append({
+                    'status': 'error',
+                    'file': os.path.basename(input_path),
+                    'message': 'File not found'
+                })
+                continue
+            
+            filename = os.path.basename(input_path)
+            if not filename.endswith('.enc'):
+                results.append({
+                    'status': 'error',
+                    'file': filename,
+                    'message': 'File is not encrypted'
+                })
+                continue
+            
+            original_filename = filename[:-4]  # Remove .enc extension
+            output_path = os.path.join(output_folder, original_filename)
+            
+            if os.path.exists(output_path):
+                results.append({
+                    'status': 'error',
+                    'file': filename,
+                    'message': 'Output file already exists'
+                })
+                continue
+            
+            # Decrypt the file
+            decrypt_file(input_path, private_key_path, output_path, password)
+            
+            results.append({
+                'status': 'success',
+                'file': filename,
+                'decrypted_file': original_filename,
+                'message': 'File decrypted successfully'
+            })
+            
+        except Exception as e:
+            results.append({
+                'status': 'error',
+                'file': os.path.basename(input_path),
+                'message': str(e)
+            })
+            logging.error(f"Error decrypting file {input_path}: {e}")
+    
+    return results

@@ -7,7 +7,7 @@ import os
 import logging
 from datetime import datetime, timedelta
 from mimetypes import guess_type
-from encryption import generate_rsa_keys, encrypt_file, decrypt_file
+from encryption import generate_rsa_keys, encrypt_file, decrypt_file, batch_encrypt_files, batch_decrypt_files
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -161,12 +161,9 @@ def encrypt():
         if 'file' not in request.files:
             return jsonify({"status": "error", "message": "No file selected"}), 400
         
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"status": "error", "message": "No file selected"}), 400
-        
-        if not allowed_file(file.filename):
-            return jsonify({"status": "error", "message": "File type not allowed"}), 400
+        files = request.files.getlist('file')
+        if len(files) == 0 or files[0].filename == '':
+            return jsonify({"status": "error", "message": "No files selected"}), 400
         
         password = request.form.get("password", "").strip()
         if not password:
@@ -177,36 +174,65 @@ def encrypt():
             return jsonify({"status": "error", "message": "Public key not found"}), 400
         
         user_dir = get_user_file_directory(current_user.id)
-        original_filename = file.filename
-        encrypted_filename = f"{original_filename}.enc"
-        encrypted_path = os.path.join(user_dir, encrypted_filename)
+        temp_files = []
+        original_filenames = []
         
-        if os.path.exists(encrypted_path):
-            return jsonify({"status": "error", "message": "Encrypted file already exists"}), 400
+        # Validate all files first
+        for file in files:
+            if not allowed_file(file.filename):
+                return jsonify({"status": "error", "message": f"File type not allowed: {file.filename}"}), 400
+            
+            original_filename = file.filename
+            encrypted_filename = f"{original_filename}.enc"
+            encrypted_path = os.path.join(user_dir, encrypted_filename)
+            
+            if os.path.exists(encrypted_path):
+                return jsonify({"status": "error", "message": f"Encrypted file already exists: {encrypted_filename}"}), 400
+            
+            original_filenames.append(original_filename)
+            temp_path = os.path.join(user_dir, f"temp_{original_filename}")
+            temp_files.append(temp_path)
+            file.save(temp_path)
         
-        temp_path = os.path.join(user_dir, f"temp_{original_filename}")
-        file.save(temp_path)
+        # Process batch encryption
+        results = batch_encrypt_files(
+            input_paths=temp_files,
+            public_key_path=public_key_path,
+            output_folder=user_dir,
+            password=password
+        )
         
-        encrypt_file(temp_path, public_key_path, encrypted_path, password)
-        os.remove(temp_path)
+        # Clean up temp files
+        for temp_path in temp_files:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
         
+        # Check results
+        success_count = sum(1 for result in results if result['status'] == 'success')
+        if success_count == 0:
+            return jsonify({"status": "error", "message": "Failed to encrypt all files"}), 500
+        
+        # Send notification
         send_email_notification(
-            subject="File Encrypted",
-            body=f"Your file {original_filename} has been encrypted successfully.",
+            subject="Files Encrypted",
+            body=f"{success_count} file(s) have been encrypted successfully.",
             to_email="user@example.com"
         )
         
         return jsonify({
             "status": "success",
-            "message": "File encrypted successfully!",
-            "filename": encrypted_filename,
-            "original_name": original_filename
+            "message": f"Successfully encrypted {success_count}/{len(files)} files",
+            "results": results
         })
     except Exception as e:
-        logging.error(f"Error encrypting file: {e}")
+        logging.error(f"Error encrypting files: {e}")
+        # Clean up any remaining temp files
+        for temp_path in temp_files:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
         return jsonify({
             "status": "error",
-            "message": f"Failed to encrypt file: {str(e)}"
+            "message": f"Failed to encrypt files: {str(e)}"
         }), 500
 
 @app.route("/decrypt", methods=["POST"])
@@ -217,12 +243,9 @@ def decrypt():
         if 'file' not in request.files:
             return jsonify({"status": "error", "message": "No file selected"}), 400
         
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"status": "error", "message": "No file selected"}), 400
-        
-        if not file.filename.endswith('.enc'):
-            return jsonify({"status": "error", "message": "File is not encrypted"}), 400
+        files = request.files.getlist('file')
+        if len(files) == 0 or files[0].filename == '':
+            return jsonify({"status": "error", "message": "No files selected"}), 400
         
         password = request.form.get("password", "").strip()
         if not password:
@@ -233,42 +256,65 @@ def decrypt():
             return jsonify({"status": "error", "message": "Private key not found"}), 400
         
         user_dir = get_user_file_directory(current_user.id)
-        encrypted_filename = file.filename
-        original_filename = get_original_filename(encrypted_filename)
-        decrypted_path = os.path.join(user_dir, original_filename)
+        temp_files = []
+        encrypted_filenames = []
         
-        if os.path.exists(decrypted_path):
-            return jsonify({"status": "error", "message": "Decrypted file already exists"}), 400
-        
-        temp_path = os.path.join(user_dir, f"temp_{encrypted_filename}")
-        file.save(temp_path)
-        
-        decrypt_file(temp_path, private_key_path, decrypted_path, password)
-        
-        if not os.path.exists(decrypted_path) or os.path.getsize(decrypted_path) == 0:
-            os.remove(temp_path)
+        # Validate all files first
+        for file in files:
+            if not file.filename.endswith('.enc'):
+                return jsonify({"status": "error", "message": f"File is not encrypted: {file.filename}"}), 400
+            
+            encrypted_filename = file.filename
+            original_filename = get_original_filename(encrypted_filename)
+            decrypted_path = os.path.join(user_dir, original_filename)
+            
             if os.path.exists(decrypted_path):
-                os.remove(decrypted_path)
-            raise Exception("Decryption failed - invalid output")
+                return jsonify({"status": "error", "message": f"Decrypted file already exists: {original_filename}"}), 400
+            
+            encrypted_filenames.append(encrypted_filename)
+            temp_path = os.path.join(user_dir, f"temp_{encrypted_filename}")
+            temp_files.append(temp_path)
+            file.save(temp_path)
         
-        os.remove(temp_path)
+        # Process batch decryption
+        results = batch_decrypt_files(
+            input_paths=temp_files,
+            private_key_path=private_key_path,
+            output_folder=user_dir,
+            password=password
+        )
         
+        # Clean up temp files
+        for temp_path in temp_files:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        
+        # Check results
+        success_count = sum(1 for result in results if result['status'] == 'success')
+        if success_count == 0:
+            return jsonify({"status": "error", "message": "Failed to decrypt all files"}), 500
+        
+        # Send notification
         send_email_notification(
-            subject="File Decrypted",
-            body=f"Your file {original_filename} has been decrypted successfully.",
+            subject="Files Decrypted",
+            body=f"{success_count} file(s) have been decrypted successfully.",
             to_email="user@example.com"
         )
         
         return jsonify({
             "status": "success",
-            "message": "File decrypted successfully!",
-            "filename": original_filename
+            "message": f"Successfully decrypted {success_count}/{len(files)} files",
+            "results": results
         })
     except Exception as e:
-        logging.error(f"Error decrypting file: {e}")
+        logging.error(f"Error decrypting files: {e}")
+        # Clean up any remaining temp files
+        for temp_path in temp_files:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
         return jsonify({
             "status": "error",
-            "message": f"Failed to decrypt file: {str(e)}"
+            "message": f"Failed to decrypt files: {str(e)}"
         }), 500
 
 @app.route("/generate_shareable_link/<filename>", methods=["POST"])
